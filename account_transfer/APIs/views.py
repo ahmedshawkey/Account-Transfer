@@ -4,6 +4,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Account, Transaction
 from .serializers import AccountSerializer, TransactionSerializer
+import csv
+import io
 
 
 
@@ -39,3 +41,21 @@ def get_transactions(request):
     transactions = Transaction.objects.all()
     serializer = TransactionSerializer(transactions, many=True)
     return Response(serializer.data)
+
+
+@api_view(['POST'])
+def get_accounts_from_file(request):
+    accounts_file = request.FILES['file']
+
+   # Read the file as text
+    decoded_file = accounts_file.read().decode('utf-8')
+    io_string = io.StringIO(decoded_file)
+    reader = csv.reader(io_string)
+
+    next(reader)
+    for row in reader:
+        account_number, account_name, balance = row
+        account = Account(account_number=account_number, account_name=account_name, balance=balance)
+        account.save()
+
+    return Response({'message': 'Accounts created successfully'}, status=200)

@@ -1,0 +1,5 @@
+http://127.0.0.1:8000/api/accounts/            send a GET call to this API endpoint to get all accounts. 
+http://127.0.0.1:8000/api/accounts/            send a POST call to this API endpoint with (ID, name, balance) to create a new account. 
+
+http://127.0.0.1:8000/api/transactions/        send a POST call to this API endpoint with (sender_id, receiver_id, amount) to make a ne transaction.
+http://127.0.0.1:8000/api/transactions/        send a GET call to this API endpoint to get all transactions. 

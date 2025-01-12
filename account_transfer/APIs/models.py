@@ -9,3 +9,10 @@ class Account(models.Model):
 
     def __str__(self):
         return self.account_name
+
+
+class Transaction(models.Model):
+    sender_id = models.CharField(max_length=100)
+    receiver_id = models.CharField(max_length=100)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    date = models.DateTimeField(auto_now_add=True)

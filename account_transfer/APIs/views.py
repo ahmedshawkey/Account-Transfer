@@ -60,6 +60,8 @@ def get_accounts_from_file(request):
 
     next(reader)
     for row in reader:
+        if len(row) != 3:
+            return Response({'message': 'Invalid file format'}, status=400)
         account_number, account_name, balance = row
         account = Account(account_number=account_number, account_name=account_name, balance=balance)
         account.save()

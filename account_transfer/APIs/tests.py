@@ -5,7 +5,8 @@ from django.urls import reverse
 from .models import Account, Transaction
 from .serializers import AccountSerializer, TransactionSerializer
 import decimal
-
+import io
+import csv
 
 # Create your tests here.
 
@@ -113,3 +114,43 @@ class TransactionTests(TestCase):
         response = self.client.get(self.get_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
+
+
+class AccountFileUploadTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.url = reverse('get-accounts-from-file')
+
+    def test_upload_valid_csv(self):
+
+        # Create a sample CSV file content
+        csv_content = 'account_number,account_name,balance\n12345678,Test Account 1,1000.00\n87654321,Test Account 2,2000.00\n'
+        file = io.StringIO(csv_content)
+        file.name = 'accounts.csv'
+
+        response = self.client.post(self.url, {'file': file}, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Account.objects.count(), 2)
+        self.assertEqual(Account.objects.get(account_number='12345678').account_name, 'Test Account 1')
+
+    def test_upload_invalid_csv_format(self):
+
+        # Create an invalid CSV file content with missing columns
+        csv_content = 'account_number,account_name\n12345678,Test Account 1\n'
+        file = io.StringIO(csv_content)
+        file.name = 'accounts.csv'
+
+        response = self.client.post(self.url, {'file': file}, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Account.objects.count(), 0)
+
+    def test_upload_csv_with_extra_columns(self):
+
+        # Create a CSV file content with extra columns
+        csv_content = 'account_number,account_name,balance,extra_column\n12345678,Test Account 1,1000.00,extra_data\n'
+        file = io.StringIO(csv_content)
+        file.name = 'accounts.csv'
+
+        response = self.client.post(self.url, {'file': file}, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Account.objects.count(), 0)

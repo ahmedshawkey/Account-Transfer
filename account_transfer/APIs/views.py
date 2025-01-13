@@ -1,3 +1,4 @@
+import decimal
 from django.shortcuts import render
 from rest_framework import generics
 from rest_framework.decorators import api_view
@@ -24,7 +25,11 @@ def create_transaction(request):
     amount = request.data.get('amount')
     sender = Account.objects.get(account_number=sender_id)
     receiver = Account.objects.get(account_number=receiver_id)
-    amount = int(amount)
+    amount = decimal.Decimal(amount)
+
+    if (amount <= 0):
+        return Response({'message': 'Invalid amount(amount can not be less than 0)'}, status=400)
+
     if sender.balance >= amount:
         sender.balance -= amount
         receiver.balance += amount
@@ -35,6 +40,7 @@ def create_transaction(request):
         return Response({'message': 'Transaction successful'}, status=200)
     else:
         return Response({'message': 'Insufficient balance'}, status=400)
+
 
 @api_view(['GET'])
 def get_transactions(request):

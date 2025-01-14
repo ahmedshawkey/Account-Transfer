@@ -7,6 +7,7 @@ from .models import Account, Transaction
 from .serializers import AccountSerializer, TransactionSerializer
 import csv
 import io
+import pandas as pd
 
 
 
@@ -49,21 +50,26 @@ def get_transactions(request):
     return Response(serializer.data)
 
 
+
 @api_view(['POST'])
 def get_accounts_from_file(request):
     accounts_file = request.FILES['file']
+    file_type = accounts_file.name.split('.')[-1].lower()
 
-   # Read the file as text
-    decoded_file = accounts_file.read().decode('utf-8')
-    io_string = io.StringIO(decoded_file)
-    reader = csv.reader(io_string)
+    try:
+        if file_type == 'csv' or file_type == 'txt':
+            df = pd.read_csv(accounts_file)
+        elif file_type in ['xls', 'xlsx']:
+            df = pd.read_excel(accounts_file)
+        else:
+            return Response({'message': 'Unsupported file type'}, status=400)
 
-    next(reader)
-    for row in reader:
-        if len(row) != 3:
-            return Response({'message': 'Invalid file format'}, status=400)
-        account_number, account_name, balance = row
-        account = Account(account_number=account_number, account_name=account_name, balance=balance)
-        account.save()
+        for _, row in df.iterrows():
+            account_number, account_name, balance = row
+            account = Account(account_number=account_number, account_name=account_name, balance=balance)
+            account.save()
 
-    return Response({'message': 'Accounts created successfully'}, status=200)
+        return Response({'message': 'Accounts created successfully'}, status=200)
+
+    except Exception as e:
+        return Response({'message': str(e)}, status=400)
